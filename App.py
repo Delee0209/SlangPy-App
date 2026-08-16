@@ -182,7 +182,7 @@ class App:
                 self.postprocess(self)
             self.present()
 
-    def numpy_display(self, framebuffer): # directly display the framebuffer -> ndarray
+    def numpy_display(self, framebuffer): # directly display the framebuffer -> ndarray with shape(width, height, 4)
         self.command_encoder = self.device.create_command_encoder()
         self.configure_frame(framebuffer.shape[1], framebuffer.shape[0])
         self.frame.copy_from_numpy(framebuffer)
