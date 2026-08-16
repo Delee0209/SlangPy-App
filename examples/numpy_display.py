@@ -8,57 +8,40 @@ sys.path.insert(0, os.path.abspath(app_path))
 
 from App import *
 
-n = 250
+n = 800
 
 app = App(title = "numpy display", width = n, height = n, resizable = False, vsync = True)
 
 # initialize grid
-grid0 = np.zeros((n, n, 4), dtype = np.float32)
-grid0[:, :, 3] = 1.0
-grid1 = np.zeros((n, n, 4), dtype = np.float32)
-grid1[:, :, 3] = 1.0
+grid = np.zeros((n, n), dtype = np.int8)
+# display color setting
+palette = np.array([[0, 0, 0, 1], [1, 1, 1, 1]], dtype=np.float32)
 
 # initialize random number generator
 rng = np.random.default_rng(seed=42)
-
-def set(storage, x, y, val):
-    storage[x][y][0] = val
-    storage[x][y][1] = val
-    storage[x][y][2] = val
 
 # randomly set initial population
 initial_population = int(n * n / 5)
 for i in range(initial_population):
     x = int(rng.uniform(0.0, n) % n)
     y = int(rng.uniform(0.0, n) % n)
-    set(grid0, x, y, 1)
+    grid[x, y] = 1
 
-def game_of_life(in_grid, out_grid):
-    for i in range(n):
-        for j in range(n):
-            set(out_grid, i, j, in_grid[i, j, 0])
-            total = int(in_grid[i, (j - 1) % n, 0] +
-                        in_grid[i, (j + 1) % n, 0] +
-                        in_grid[(i - 1) % n, j, 0] + 
-                        in_grid[(i + 1) % n, j, 0] + 
-                        in_grid[(i - 1) % n, (j - 1) % n, 0] + 
-                        in_grid[(i - 1) % n, (j + 1) % n, 0] + 
-                        in_grid[(i + 1) % n, (j - 1) % n, 0] + 
-                        in_grid[(i + 1) % n, (j + 1) % n, 0])
-            if in_grid[i, j, 0] == 1:
-                if total < 2 or total > 3:
-                    set(out_grid, i, j, 0)
-            else:
-                if total == 3:
-                    set(out_grid, i, j, 1)
+# game of life update function
+def game_of_life(grid):
+    neighbors = (
+        np.roll(grid,  1, axis=0) + np.roll(grid, -1, axis=0) +
+        np.roll(grid,  1, axis=1) + np.roll(grid, -1, axis=1) +
+        np.roll(np.roll(grid,  1, axis=0),  1, axis=1) +
+        np.roll(np.roll(grid,  1, axis=0), -1, axis=1) +
+        np.roll(np.roll(grid, -1, axis=0),  1, axis=1) +
+        np.roll(np.roll(grid, -1, axis=0), -1, axis=1)
+    )
+    return ((neighbors == 3) | ((grid == 1) & (neighbors == 2))).astype(int)
 
-iteration = 0
+# main loop
 while(app.process_event()):
-    # game of life update
-    in_grid = grid0 if iteration % 2 == 0 else grid1
-    out_grid = grid1 if iteration % 2 == 0 else grid0
     # display current iteration
-    app.numpy_display(in_grid)
+    app.numpy_display(palette[grid])
     # game of life update
-    game_of_life(in_grid, out_grid)
-    iteration += 1
+    grid = game_of_life(grid)
